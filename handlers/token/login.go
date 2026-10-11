@@ -106,7 +106,7 @@ func (i *LoginHandler) Refresh(cc echo.Context) (err error) {
 		c.Ctx(),
 		models.UserPipeline(true).Match(models.UserMatch(userID)).Pipe,
 		result,
-	); err != nil && vmdb.ErrNoDocuments(err) {
+	); err != nil {
 		return
 	}
 	token := new(vcago.AuthToken)
