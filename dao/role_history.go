@@ -33,6 +33,9 @@ func RoleHistoryBulkInsert(ctx context.Context, i *models.RoleHistoryBulkRequest
 	}
 	result = new(models.RoleBulkExport)
 	for _, role := range i.AddedRoles {
+		if err = role.ValidateRequest(); err != nil {
+			return
+		}
 		filter := role.MatchUser()
 		user := new(models.User)
 		if err = UserCollection.AggregateOne(

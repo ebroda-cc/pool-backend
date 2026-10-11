@@ -132,6 +132,22 @@ func RolesPermission(role string, user *User, token *AccessToken, options []stri
 	if !(token.Roles.Validate("admin;employee;pool_employee") || token.PoolRoles.Validate(role)) {
 		return vcago.NewPermissionDenied(PoolRoleCollection)
 	}
+	if !token.Roles.Validate("admin;employee;pool_employee") && !SameCrew(user, token) {
+		return vcago.NewPermissionDenied(PoolRoleCollection)
+	}
+	return
+}
+
+// SameCrew returns true if the user is a member of the crew of the token user.
+func SameCrew(user *User, token *AccessToken) bool {
+	return token.CrewID != "" && user.Crew.CrewID == token.CrewID
+}
+
+// ValidateRequest checks that the request names a user and a role, because the filters ignore empty values.
+func (i *RoleRequest) ValidateRequest() (err error) {
+	if i.UserID == "" || i.Role == "" {
+		return vcago.NewBadRequest(PoolRoleCollection, "user_id and role required", nil)
+	}
 	return
 }
 
@@ -142,8 +158,11 @@ func RolesBulkPermission(token *AccessToken) (err error) {
 	return
 }
 
-func RolesDeletePermission(role string, token *AccessToken) (err error) {
+func RolesDeletePermission(role string, user *User, token *AccessToken) (err error) {
 	if !(token.Roles.Validate("admin;employee;pool_employee") || token.PoolRoles.Validate(role)) {
+		return vcago.NewPermissionDenied(PoolRoleCollection)
+	}
+	if !token.Roles.Validate("admin;employee;pool_employee") && !SameCrew(user, token) {
 		return vcago.NewPermissionDenied(PoolRoleCollection)
 	}
 	return

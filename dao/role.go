@@ -13,6 +13,9 @@ import (
 )
 
 func RoleInsert(ctx context.Context, i *models.RoleRequest, token *models.AccessToken) (result *vmod.Role, err error) {
+	if err = i.ValidateRequest(); err != nil {
+		return
+	}
 	filter := i.MatchUser()
 	user := new(models.User)
 	if err = UserCollection.AggregateOne(
@@ -56,6 +59,9 @@ func RoleBulkUpdate(ctx context.Context, i *models.RoleBulkRequest, token *model
 	userRolesMap = make(map[string]*models.BulkUserRoles)
 	result = new(models.RoleBulkExport)
 	for _, role := range i.AddedRoles {
+		if err = role.ValidateRequest(); err != nil {
+			return
+		}
 		filter := role.MatchUser()
 		user := new(models.User)
 		if err = UserCollection.AggregateOne(
@@ -97,6 +103,9 @@ func RoleBulkUpdate(ctx context.Context, i *models.RoleBulkRequest, token *model
 
 	}
 	for _, role := range i.DeletedRoles {
+		if err = role.ValidateRequest(); err != nil {
+			return
+		}
 		filter := role.MatchUser()
 		user := new(models.User)
 		if err = UserCollection.FindOne(
@@ -114,7 +123,7 @@ func RoleBulkUpdate(ctx context.Context, i *models.RoleBulkRequest, token *model
 		); err != nil {
 			return
 		}
-		if err = models.RolesDeletePermission(deleteRole.Name, token); err != nil {
+		if err = models.RolesDeletePermission(deleteRole.Name, user, token); err != nil {
 			return
 		}
 		if err = PoolRoleCollection.DeleteOne(ctx, role.Filter()); err != nil {
@@ -258,6 +267,9 @@ func getIndex(role *vmod.Role, data []vmod.Role) (index int) {
 	return -1
 }
 func RoleDelete(ctx context.Context, i *models.RoleRequest, token *models.AccessToken) (result *vmod.Role, err error) {
+	if err = i.ValidateRequest(); err != nil {
+		return
+	}
 	filter := i.MatchUser()
 	user := new(models.User)
 	if err = UserCollection.FindOne(
@@ -274,7 +286,7 @@ func RoleDelete(ctx context.Context, i *models.RoleRequest, token *models.Access
 	); err != nil {
 		return
 	}
-	if err = models.RolesDeletePermission(result.Name, token); err != nil {
+	if err = models.RolesDeletePermission(result.Name, user, token); err != nil {
 		return
 	}
 	if err = PoolRoleCollection.DeleteOne(ctx, i.Filter()); err != nil {

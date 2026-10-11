@@ -86,6 +86,9 @@ func RolesHistoryPermission(user *User, token *AccessToken) (err error) {
 	if !(token.Roles.Validate("admin;employee;pool_employee") || token.PoolRoles.Validate(ASPRole)) {
 		return vcago.NewPermissionDenied(PoolRoleHistoryCollection)
 	}
+	if !token.Roles.Validate("admin;employee;pool_employee") && !SameCrew(user, token) {
+		return vcago.NewPermissionDenied(PoolRoleHistoryCollection)
+	}
 	return
 }
 
