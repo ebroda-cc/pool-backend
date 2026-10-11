@@ -27,7 +27,7 @@ func (i *RoleHistoryHandler) Routes(group *echo.Group) {
 func (i *RoleHistoryHandler) Create(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleHistoryCreate)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	token := new(models.AccessToken)
@@ -65,7 +65,7 @@ func (i *RoleHistoryHandler) CreateBulk(cc echo.Context) (err error) {
 func (i *RoleHistoryHandler) ConfirmSelection(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleHistoryRequest)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	token := new(models.AccessToken)
@@ -117,7 +117,7 @@ func (i *RoleHistoryHandler) Get(cc echo.Context) (err error) {
 func (i *RoleHistoryHandler) Delete(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleHistoryRequest)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	token := new(models.AccessToken)

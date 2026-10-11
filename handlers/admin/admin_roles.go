@@ -24,7 +24,7 @@ func (i *RoleHandler) Routes(group *echo.Group) {
 func (i *RoleHandler) Create(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleRequest)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	user := new(models.User)
@@ -48,7 +48,7 @@ func (i *RoleHandler) Create(cc echo.Context) (err error) {
 func (i *RoleHandler) Delete(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleRequest)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	user := new(models.User)

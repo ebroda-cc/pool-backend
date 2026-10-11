@@ -33,7 +33,7 @@ func (i *LoginHandler) Routes(group *echo.Group) {
 func (i *LoginHandler) Callback(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(vcago.Callback)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	tokenUser := new(vmod.User)

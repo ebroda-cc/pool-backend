@@ -25,7 +25,7 @@ func (i *RoleHandler) Routes(group *echo.Group) {
 func (i *RoleHandler) CreateBulk(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleBulkRequest)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	token := new(models.AccessToken)
@@ -54,7 +54,7 @@ func (i *RoleHandler) CreateBulk(cc echo.Context) (err error) {
 func (i *RoleHandler) Delete(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.RoleRequest)
-	if c.BindAndValidate(body); err != nil {
+	if err = c.BindAndValidate(body); err != nil {
 		return
 	}
 	token := new(models.AccessToken)
