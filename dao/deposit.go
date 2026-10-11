@@ -168,12 +168,13 @@ func DepositUpdate(ctx context.Context, i *models.DepositUpdate, token *models.A
 					// Add takings to CRM
 					var taking *models.Taking
 					if taking, err = TakingGetByID(ctx, &vmod.IDParam{ID: unit.TakingID}, token); err != nil {
+						// a panic in this goroutine would stop the whole server
 						log.Print(err)
-					}
-
-					taking.EditorID = token.ID
-					if err = IDjango.Post(taking, "/v1/pool/taking/create/"); err != nil {
-						log.Print(err)
+					} else {
+						taking.EditorID = token.ID
+						if err = IDjango.Post(taking, "/v1/pool/taking/create/"); err != nil {
+							log.Print(err)
+						}
 					}
 
 					// Add participations to event
@@ -250,11 +251,13 @@ func DepositSync(ctx context.Context, i *models.DepositParam, token *models.Acce
 				// Add takings to CRM
 				var taking *models.Taking
 				if taking, err = TakingGetByID(ctx, &vmod.IDParam{ID: unit.TakingID}, token); err != nil {
+					// a panic in this goroutine would stop the whole server
 					log.Print(err)
-				}
-				taking.EditorID = token.ID
-				if err = IDjango.Post(taking, "/v1/pool/taking/create/"); err != nil {
-					log.Print(err)
+				} else {
+					taking.EditorID = token.ID
+					if err = IDjango.Post(taking, "/v1/pool/taking/create/"); err != nil {
+						log.Print(err)
+					}
 				}
 
 				// Add participations to event
