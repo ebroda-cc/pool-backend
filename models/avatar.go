@@ -55,11 +55,14 @@ func (i *AvatarUpdate) PermittedFilter(token *AccessToken) bson.D {
 	return filter.Bson()
 }
 
+// PermittedFilter matches the user document of the token user if the avatar belongs to it.
 func (i *AvatarParam) PermittedFilter(token *AccessToken) bson.D {
-	filter := vmdb.NewFilter()
-	filter.EqualString("_id", i.ID)
-	filter.EqualString("user_id", token.ID)
-	return filter.Bson()
+	return bson.D{{Key: "_id", Value: token.ID}, {Key: "avatar._id", Value: i.ID}}
+}
+
+// MatchAvatar matches the user document that holds the avatar.
+func (i *AvatarParam) MatchAvatar() bson.D {
+	return bson.D{{Key: "avatar._id", Value: i.ID}}
 }
 
 func (i *AvatarParam) Match() bson.D {

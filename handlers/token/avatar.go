@@ -6,10 +6,12 @@ import (
 	"net/http"
 	"pool-backend/dao"
 	"pool-backend/models"
+	"strings"
 
 	"github.com/Viva-con-Agua/vcago"
 	"github.com/Viva-con-Agua/vcago/vmdb"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
@@ -22,6 +24,7 @@ var Avatar = &AvatarHandler{*vcago.NewHandler("avatar")}
 
 func (i *AvatarHandler) Routes(group *echo.Group) {
 	group.Use(i.Context)
+	group.Use(middleware.BodyLimit("5MB"))
 	group.DELETE("/:id", i.Delete, accessCookie)
 	group.POST("/upload", i.Upload, accessCookie)
 	group.GET("/img/:id", i.GetByID, accessCookie)
@@ -46,11 +49,6 @@ func (i *AvatarHandler) Upload(cc echo.Context) (err error) {
 		return
 	}
 	result := models.NewAvatar(token)
-	filter := bson.D{{Key: "_id", Value: token.ID}}
-	update := bson.D{{Key: "avatar", Value: result}}
-	if err = dao.UserCollection.UpdateOne(c.Ctx(), filter, vmdb.UpdateSet(update), nil); err != nil {
-		return
-	}
 	file := new(models.AvatarFile)
 	if file.File, file.Header, err = c.Request().FormFile("file"); err != nil {
 		return
@@ -58,6 +56,9 @@ func (i *AvatarHandler) Upload(cc echo.Context) (err error) {
 	buf := bytes.NewBuffer(nil)
 	if _, err = io.Copy(buf, file.File); err != nil {
 		return
+	}
+	if !strings.HasPrefix(http.DetectContentType(buf.Bytes()), "image/") {
+		return vcago.NewBadRequest(models.AvatarCollection, "file is not an image")
 	}
 	bucket := new(gridfs.Bucket)
 	if bucket, err = gridfs.NewBucket(dao.Database.Database); err != nil {
@@ -67,11 +68,18 @@ func (i *AvatarHandler) Upload(cc echo.Context) (err error) {
 	if uploadStream, err = bucket.OpenUploadStreamWithID(result.ID, file.Header.Filename); err != nil {
 		return
 	}
-	defer uploadStream.Close()
 	if _, err = uploadStream.Write(buf.Bytes()); err != nil {
+		uploadStream.Close()
 		return
 	}
-
+	if err = uploadStream.Close(); err != nil {
+		return
+	}
+	filter := bson.D{{Key: "_id", Value: token.ID}}
+	update := bson.D{{Key: "avatar", Value: result}}
+	if err = dao.UserCollection.UpdateOne(c.Ctx(), filter, vmdb.UpdateSet(update), nil); err != nil {
+		return
+	}
 	return c.Created(result)
 }
 
@@ -88,6 +96,11 @@ func (i *AvatarHandler) GetByID(cc echo.Context) (err error) {
 	c := cc.(vcago.Context)
 	body := new(models.AvatarParam)
 	if err = c.BindAndValidate(body); err != nil {
+		return
+	}
+	// only serve files that are the avatar of a user, the bucket also contains the deposit receipts
+	user := new(models.User)
+	if err = dao.UserCollection.FindOne(c.Ctx(), body.MatchAvatar(), user); err != nil {
 		return
 	}
 	var buf bytes.Buffer
