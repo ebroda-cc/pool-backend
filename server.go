@@ -106,9 +106,11 @@ func main() {
 	key.Import.Routes(api.Group("/import"))
 
 	if dao.TestLogin {
-		admin.Crew.Routes(e.Group("/admin/crews"))
-		admin.Role.Routes(e.Group("/admin/users/role"))
-		admin.User.Routes(e.Group("/admin/users"))
+		log.Print("WARNING: API_TEST_LOGIN is enabled. /v1/auth/testlogin logs in any user by email without password. Never enable it in production.")
+		adminGroup := e.Group("/admin", vcago.KeyAuthMiddleware())
+		admin.Crew.Routes(adminGroup.Group("/crews"))
+		admin.Role.Routes(adminGroup.Group("/users/role"))
+		admin.User.Routes(adminGroup.Group("/users"))
 	}
 	api.GET("/docu/*", echoSwagger.WrapHandler)
 	//server
