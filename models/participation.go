@@ -141,7 +141,15 @@ func (i *ParticipationUpdate) ParticipationUpdatePermission(token *AccessToken, 
 			return vcago.NewPermissionDenied(ParticipationCollection)
 		}
 	case "confirmed", "rejected":
-		if !token.Roles.Validate("admin;employee;pool_employee") && !token.PoolRoles.Validate(ASPEventRole) && token.ID != participation.Event.EventASPID {
+		if token.Roles.Validate("admin;employee;pool_employee") || token.ID == participation.Event.EventASPID {
+			return
+		}
+		// crew ASPs may only decide on participations of events of their own crew
+		if !token.PoolRoles.Validate(ASPEventRole) || token.CrewID == "" || token.CrewID != participation.Event.CrewID {
+			return vcago.NewPermissionDenied(ParticipationCollection)
+		}
+	default:
+		if !token.Roles.Validate("admin;employee;pool_employee") {
 			return vcago.NewPermissionDenied(ParticipationCollection)
 		}
 	}
