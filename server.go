@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+	"os"
 	"pool-backend/dao"
 	_ "pool-backend/docs"
 	"pool-backend/handlers/admin"
@@ -32,7 +34,22 @@ import (
 // @name access_cookie
 // @description
 
+// insecureSecrets lists the secrets that vcago falls back to "secret" for when they are not set.
+var insecureSecrets = []string{"JWT_SECRET", "API_KEY"}
+
+// checkSecrets stops the server if a secret is missing, uses the vcago default value or is too short,
+// because anybody could forge access tokens or call the import API with it.
+func checkSecrets() {
+	for _, key := range insecureSecrets {
+		value := os.Getenv(key)
+		if value == "" || value == "secret" || len(value) < 32 {
+			log.Fatalf("%s must be set to a random value with at least 32 characters", key)
+		}
+	}
+}
+
 func main() {
+	checkSecrets()
 	e := vcago.NewServer()
 	dao.InitialDatabase()
 	dao.InitialNats()
