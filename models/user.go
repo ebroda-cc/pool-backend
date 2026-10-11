@@ -431,6 +431,16 @@ func UserFilter() *vmdb.Filter {
 	return filter
 }
 
+// PermittedFilter matches the user, for non-employees only within the own crew.
+func (i *UserParam) PermittedFilter(token *AccessToken) bson.D {
+	filter := UserFilter()
+	filter.EqualString("_id", i.ID)
+	if !token.Roles.Validate("admin;employee;pool_employee") {
+		CrewFilter(filter, "crew.crew_id", token)
+	}
+	return filter.Bson()
+}
+
 func (i *UserParam) Match() bson.D {
 	filter := UserFilter()
 	filter.EqualString("_id", i.ID)

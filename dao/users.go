@@ -77,7 +77,7 @@ func UsersUserGetByID(ctx context.Context, i *models.UserParam, token *models.Ac
 	if err = models.UsersPermission(token); err != nil {
 		return
 	}
-	if err = UserCollection.AggregateOne(ctx, models.UserPermittedPipeline(token).Match(i.Match()).Pipe, &result); err != nil {
+	if err = UserCollection.AggregateOne(ctx, models.UserPermittedPipeline(token).Match(i.PermittedFilter(token)).Pipe, &result); err != nil {
 		return
 	}
 	return
