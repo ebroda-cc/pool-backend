@@ -240,7 +240,7 @@ func (i *DepositCreate) DepositDatabase(token *AccessToken) (r *DepositDatabase,
 		amount += depositUnit.Money.Amount
 	}
 	currency := "EUR"
-	if d != nil {
+	if len(d) != 0 {
 		currency = d[0].Money.Currency
 	}
 	r = &DepositDatabase{
@@ -342,6 +342,16 @@ func (i *DepositQuery) Sort() bson.D {
 
 func (i *DepositQuery) SortOption() bool {
 	return i.SortField == "money.amount"
+}
+
+// HasDepositUnit returns true if the deposit unit with the given id belongs to the deposit.
+func (i *Deposit) HasDepositUnit(id string) bool {
+	for _, unit := range i.DepositUnit {
+		if unit.ID == id {
+			return true
+		}
+	}
+	return false
 }
 
 func (i *Deposit) Content() *vmod.Content {

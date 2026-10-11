@@ -21,7 +21,7 @@ func validateDepositUnits(ctx context.Context, takingID string, amount int64, cr
 	); err != nil {
 		return
 	}
-	if amount > taking.Money.Amount {
+	if amount < 0 || amount > taking.Money.Amount {
 		return vcago.NewBadRequest(models.DepositCollection, "taking_amount_failure", nil)
 	}
 	if (!token.Roles.Validate("admin;employee;pool_employee") && crewID != token.CrewID) || taking.CrewID != crewID {
@@ -33,6 +33,9 @@ func validateDepositUnits(ctx context.Context, takingID string, amount int64, cr
 func DepositInsert(ctx context.Context, i *models.DepositCreate, token *models.AccessToken) (result *models.Deposit, err error) {
 	if err = models.DepositPermission(token); err != nil {
 		return
+	}
+	if !token.Roles.Validate("admin;employee;pool_employee") && (token.CrewID == "" || i.CrewID != token.CrewID) {
+		return nil, vcago.NewPermissionDenied(models.DepositCollection)
 	}
 	deposit, depositUnits := i.DepositDatabase(token)
 	for _, unit := range depositUnits {
@@ -65,7 +68,7 @@ func DepositUpdate(ctx context.Context, i *models.DepositUpdate, token *models.A
 		return
 	}
 	deposit := new(models.Deposit)
-	filter := bson.D{{Key: "_id", Value: i.ID}}
+	filter := (&models.DepositParam{ID: i.ID}).PermittedFilter(token)
 	if err = DepositCollection.AggregateOne(
 		ctx,
 		models.DepositPipeline().Match(filter).Pipe,
@@ -74,8 +77,22 @@ func DepositUpdate(ctx context.Context, i *models.DepositUpdate, token *models.A
 		return
 	}
 	i.Money = deposit.Money
-	if deposit.Status == "confirmed" && !token.Roles.Validate("admin;employee;pool_employee") {
-		return nil, vcago.NewBadRequest("deposit", "deposit_confirmed_failure", nil)
+	if !token.Roles.Validate("admin;employee;pool_employee") {
+		if deposit.Status == "confirmed" {
+			return nil, vcago.NewBadRequest("deposit", "deposit_confirmed_failure", nil)
+		}
+		// only employees confirm the receipt of a deposit
+		if i.Status == "confirmed" {
+			return nil, vcago.NewPermissionDenied(models.DepositCollection)
+		}
+		i.CrewID = deposit.CrewID
+		i.OrganisationID = deposit.OrganisationID
+	}
+	// deposit units can only be updated through the deposit they belong to
+	for _, unit := range i.DepositUnit {
+		if unit.ID != "" && !deposit.HasDepositUnit(unit.ID) {
+			return nil, vcago.NewBadRequest("deposit", "deposit_unit_failure", nil)
+		}
 	}
 	depositUpdate, depositUnitCreate, depositUnitUpdate, depositUnitDelete := i.DepositDatabase(deposit)
 	for _, unit := range i.DepositUnit {
@@ -90,7 +107,8 @@ func DepositUpdate(ctx context.Context, i *models.DepositUpdate, token *models.A
 		}
 	}
 	for _, unit := range depositUnitUpdate {
-		updateFilter := bson.D{{Key: "_id", Value: unit.ID}}
+		unit.DepositID = i.ID
+		updateFilter := bson.D{{Key: "_id", Value: unit.ID}, {Key: "deposit_id", Value: i.ID}}
 		if err = DepositUnitCollection.UpdateOne(ctx, updateFilter, vmdb.UpdateSet(unit), nil); err != nil {
 			return
 		}
