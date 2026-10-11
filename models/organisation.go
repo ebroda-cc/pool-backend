@@ -55,6 +55,11 @@ func OrganisationPipeline() (pipe *vmdb.Pipeline) {
 	pipe = vmdb.NewPipeline()
 	pipe.LookupUnwind(UserCollection, "default_asp_id", "_id", "default_asp")
 	//pipe.LookupUnwind(ProfileCollection, "default_asp_id", "user_id", "default_asp.profile")
+	// GET /organisations is public, so never return the birthdate of the default ASP
+	pipe.Append(bson.D{{Key: "$project", Value: bson.D{
+		{Key: "default_asp.profile.birthdate", Value: 0},
+		{Key: "default_asp.profile.birthdate_datetime", Value: 0},
+	}}})
 	return
 }
 
