@@ -332,7 +332,7 @@ func (i *EventParam) FilterEvent(token *AccessToken) bson.D {
 	if !(token.Roles.Validate("admin;employee;pool_employee") || token.PoolRoles.Validate(ASPEventRole)) {
 		filter.EqualString("event.event_asp_id", token.ID)
 	} else if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("event.crew_id", token.CrewID)
+		CrewFilter(filter, "event.crew_id", token)
 	}
 	return filter.Bson()
 }
@@ -359,7 +359,7 @@ func (i *ParticipationUpdate) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	filter.EqualString("_id", i.ID)
 	if !token.PoolRoles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("event.crew_id", token.CrewID)
+		CrewFilter(filter, "event.crew_id", token)
 	}
 	return filter.Bson()
 }
@@ -370,7 +370,7 @@ func (i *ParticipationParam) PermittedFilter(token *AccessToken) bson.D {
 	if !(token.Roles.Validate("admin;employee;pool_employee") || token.PoolRoles.Validate(ASPEventRole)) {
 		filter.EqualString("user_id", token.ID)
 	} else if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	}
 	return filter.Bson()
 }
@@ -382,7 +382,7 @@ func (i *ParticipationStateRequest) PermittedFilter(token *AccessToken) bson.D {
 		filter.EqualString("user_id", token.ID)
 	} else if i.IsConfirmed() || i.IsRejected() {
 		if !token.Roles.Validate("admin;employee;pool_employee") {
-			filter.EqualString("crew_id", token.CrewID)
+			CrewFilter(filter, "crew_id", token)
 		}
 	} else {
 		filter.EqualString("_id", "not_defined")

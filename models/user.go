@@ -459,7 +459,7 @@ func (i *UserQuery) PermittedFilter(token *AccessToken) bson.D {
 		filter.EqualStringList("crew.organisation_id", i.OrganisationID)
 		filter.EqualString("crew.crew_id", i.CrewID)
 	} else {
-		filter.EqualString("crew.crew_id", token.CrewID)
+		CrewFilter(filter, "crew.crew_id", token)
 	}
 	filter.SearchString([]string{"_id", "first_name", "last_name", "email"}, i.Search)
 	return filter.Bson()
@@ -474,7 +474,7 @@ func (i *UserQuery) PermittedUserFilter(token *AccessToken) bson.D {
 	filter.LikeString("full_name", i.FullName)
 	filter.LikeString("display_name", i.DisplayName)
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew.crew_id", token.CrewID)
+		CrewFilter(filter, "crew.crew_id", token)
 	} else {
 		filter.EqualString("crew.crew_id", i.CrewID)
 	}

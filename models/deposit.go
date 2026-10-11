@@ -310,7 +310,7 @@ func (i *DepositQuery) PermittedFilter(token *AccessToken) bson.D {
 	filter.EqualStringList("_id", i.ID)
 	filter.SearchString([]string{"deposit_units.taking.name", "reason_for_payment"}, i.Search)
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	} else {
 		filter.EqualStringList("crew_id", i.CrewID)
 		filter.EqualStringList("organisation_id", i.OrganisationID)
@@ -329,7 +329,7 @@ func (i *DepositParam) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	filter.EqualString("_id", i.ID)
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	}
 	return filter.Bson()
 }

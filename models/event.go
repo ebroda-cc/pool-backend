@@ -533,7 +533,7 @@ func (i *EventParam) PermittedDeleteFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	filter.EqualString("_id", i.ID)
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 		filter.EqualStringList("event_state.state", []string{"created", "requested"})
 	}
 	return filter.Bson()
@@ -551,7 +551,7 @@ func (i *EventUpdate) PermittedFilter(token *AccessToken) bson.D {
 		filter.EqualString("event_asp_id", token.ID)
 	} else if !token.Roles.Validate("admin;employee;pool_employee") {
 		crewMatch := vmdb.NewFilter()
-		crewMatch.EqualString("crew_id", token.CrewID)
+		CrewFilter(crewMatch, "crew_id", token)
 		eventAspMatch := vmdb.NewFilter()
 		eventAspMatch.EqualString("event_asp_id", token.ID)
 		filter.Append(bson.E{Key: "$or", Value: bson.A{eventAspMatch.Bson(), crewMatch.Bson()}})
@@ -574,7 +574,7 @@ func (i *EventParam) PermittedFilter(token *AccessToken) bson.D {
 		filter.EqualString("event_asp_id", token.ID)
 	} else if !token.Roles.Validate("admin;employee;pool_employee") {
 		crewMatch := vmdb.NewFilter()
-		crewMatch.EqualString("crew_id", token.CrewID)
+		CrewFilter(crewMatch, "crew_id", token)
 		eventAspMatch := vmdb.NewFilter()
 		eventAspMatch.EqualString("event_asp_id", token.ID)
 		filter.Append(bson.E{Key: "$or", Value: bson.A{eventAspMatch.Bson(), crewMatch.Bson()}})
@@ -647,7 +647,7 @@ func (i *EventQuery) PermittedFilter(token *AccessToken) bson.D {
 	} else if !token.Roles.Validate("admin;employee;pool_employee") {
 		noCrewMatch := vmdb.NewFilter()
 		crewMatch := vmdb.NewFilter()
-		crewMatch.EqualString("crew_id", token.CrewID)
+		CrewFilter(crewMatch, "crew_id", token)
 		noCrewMatch.EqualStringList("event_state.state", []string{"published", "finished", "closed"})
 		filter.Append(bson.E{Key: "$or", Value: bson.A{noCrewMatch.Bson(), crewMatch.Bson()}})
 	}
@@ -682,7 +682,7 @@ func (i *EventQuery) FilterEmailEvents(token *AccessToken) bson.D {
 		filter.EqualString("event_asp_id", token.ID)
 		filter.EqualString("crew_id", token.CrewID)
 	} else if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	}
 	return filter.Bson()
 }

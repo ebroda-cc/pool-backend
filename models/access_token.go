@@ -2,8 +2,10 @@ package models
 
 import (
 	"github.com/Viva-con-Agua/vcago"
+	"github.com/Viva-con-Agua/vcago/vmdb"
 	"github.com/Viva-con-Agua/vcago/vmod"
 	"github.com/golang-jwt/jwt"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type AccessToken struct {
@@ -47,4 +49,15 @@ func (token *AccessToken) AddressCreate(id string) (err error) {
 		return vcago.NewPermissionDenied(AddressesCollection)
 	}
 	return
+}
+
+// CrewFilter restricts the filter to documents of the crew of the token user.
+// vmdb.Filter.EqualString drops empty values, so for a user without crew the restriction would
+// silently disappear and match all documents. In that case the filter matches nothing instead.
+func CrewFilter(filter *vmdb.Filter, key string, token *AccessToken) {
+	if token.CrewID == "" {
+		filter.Append(bson.E{Key: key, Value: bson.D{{Key: "$in", Value: bson.A{}}}})
+		return
+	}
+	filter.EqualString(key, token.CrewID)
 }

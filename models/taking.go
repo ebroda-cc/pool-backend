@@ -296,7 +296,7 @@ func (i *TakingUpdate) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	filter.EqualString("_id", i.ID)
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	}
 	return filter.Bson()
 }
@@ -305,7 +305,7 @@ func TakingPermittedFilter(i *vmod.IDParam, token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	filter.EqualString("_id", i.ID)
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	}
 	return filter.Bson()
 }

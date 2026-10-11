@@ -274,7 +274,7 @@ func (i *RoleRequest) FilterHistory() bson.D {
 func (i *RoleBulkRequest) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew.crew_id", token.CrewID)
+		CrewFilter(filter, "crew.crew_id", token)
 		filter.ElemMatchList("pool_roles", "name", token.PoolRoles)
 	} else {
 		filter.EqualString("crew.crew_id", i.CrewID)

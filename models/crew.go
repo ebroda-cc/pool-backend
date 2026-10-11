@@ -156,7 +156,7 @@ func (i *CrewQuery) ActiveFilter() bson.D {
 
 func (i *CrewQuery) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
-	filter.EqualString("_id", token.CrewID)
+	CrewFilter(filter, "_id", token)
 	filter.LikeString("status", "active")
 	return filter.Bson()
 }
@@ -164,7 +164,7 @@ func (i *CrewQuery) PermittedFilter(token *AccessToken) bson.D {
 func (i *CrewUpdate) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("_id", token.CrewID)
+		CrewFilter(filter, "_id", token)
 	} else {
 		filter.EqualString("_id", i.ID)
 	}
@@ -174,7 +174,7 @@ func (i *CrewUpdate) PermittedFilter(token *AccessToken) bson.D {
 func (i *CrewParam) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("_id", token.CrewID)
+		CrewFilter(filter, "_id", token)
 	} else {
 		filter.EqualString("_id", i.ID)
 	}

@@ -174,7 +174,7 @@ func (i *MessageUpdate) PermittedFilter(token *AccessToken, crew *Crew) bson.D {
 func (i *RecipientGroup) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew.crew_id", token.CrewID)
+		CrewFilter(filter, "crew.crew_id", token)
 	} else {
 		filter.EqualString("crew.crew_id", i.CrewID)
 	}

@@ -174,7 +174,7 @@ func (i *RoleHistoryDatabase) Filter() bson.D {
 func (i *RoleHistoryBulkRequest) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew.crew_id", token.CrewID)
+		CrewFilter(filter, "crew.crew_id", token)
 	} else {
 		filter.EqualString("crew.crew_id", i.CrewID)
 	}
@@ -185,7 +185,7 @@ func (i *RoleHistoryBulkRequest) PermittedFilter(token *AccessToken) bson.D {
 func (i *RoleHistoryRequest) PermittedFilter(token *AccessToken) bson.D {
 	filter := vmdb.NewFilter()
 	if !token.Roles.Validate("admin;employee;pool_employee") {
-		filter.EqualString("crew_id", token.CrewID)
+		CrewFilter(filter, "crew_id", token)
 	} else {
 		filter.EqualString("crew_id", i.CrewID)
 	}
