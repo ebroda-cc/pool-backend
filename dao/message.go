@@ -43,6 +43,18 @@ func MessageUpdate(ctx context.Context, i *models.MessageUpdate, token *models.A
 		log.Print("No crew for user")
 	}
 	filter := i.PermittedFilter(token, crew)
+	if !token.Roles.Validate("admin;employee;pool_employee") {
+		// sender, mailbox, owner and type are set by the server, see PermittedMessageCreate
+		current := new(models.Message)
+		if err = MessageCollection.FindOne(ctx, filter, current); err != nil {
+			return
+		}
+		i.MessageID = current.MessageID
+		i.From = current.From
+		i.MailboxID = current.MailboxID
+		i.UserID = current.UserID
+		i.Type = current.Type
+	}
 	if err = MessageCollection.UpdateOne(
 		ctx,
 		filter,

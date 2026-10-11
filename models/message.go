@@ -95,7 +95,11 @@ func MessageCrewPermission(token *AccessToken) (err error) {
 }
 
 func MessageEventPermission(token *AccessToken, event *Event) (err error) {
-	if !token.PoolRoles.Validate(ASPRole) && !token.Roles.Validate("admin;employee;pool_employee") && event.EventASPID != token.ID {
+	if token.Roles.Validate("admin;employee;pool_employee") || event.EventASPID == token.ID {
+		return
+	}
+	// crew ASPs may only write to participants of events of their own crew
+	if !token.PoolRoles.Validate(ASPRole) || token.CrewID == "" || event.CrewID != token.CrewID {
 		return vcago.NewPermissionDenied(MessageCollection)
 	}
 	return
