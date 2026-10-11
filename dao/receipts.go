@@ -9,8 +9,17 @@ import (
 	"strconv"
 
 	"github.com/Viva-con-Agua/vcago/vmod"
-	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+// receiptDepositPermission checks that the deposit of a receipt exists and that the token user may access it.
+func receiptDepositPermission(ctx context.Context, depositID string, token *models.AccessToken) (err error) {
+	if depositID == "" {
+		return mongo.ErrNoDocuments
+	}
+	deposit := new(models.DepositDatabase)
+	return DepositCollection.FindOne(ctx, (&models.DepositParam{ID: depositID}).PermittedFilter(token), deposit)
+}
 
 func ReceiptFileCreate(
 	ctx context.Context,
@@ -24,12 +33,9 @@ func ReceiptFileCreate(
 	if err = models.DepositPermission(token); err != nil {
 		return
 	}
-	deposit := new(models.Deposit)
-	filter := bson.D{{Key: "_id", Value: create.DepositID}}
-	if err = DepositCollection.FindOne(ctx, filter, deposit); err != nil {
+	if err = receiptDepositPermission(ctx, create.DepositID, token); err != nil {
 		return
 	}
-	//permission check
 	result = create.ReceiptFile()
 	if err = ReceiptFileCollection.InsertOne(ctx, result); err != nil {
 		return
@@ -55,7 +61,9 @@ func ReceiptFileGetByID(
 	if err = ReceiptFileCollection.FindOne(ctx, id.Filter(), file); err != nil {
 		return
 	}
-	//permission check
+	if err = receiptDepositPermission(ctx, file.DepositID, token); err != nil {
+		return
+	}
 	if result, err = Database.DownloadFile(id.ID); err != nil {
 		return
 	}
@@ -74,7 +82,8 @@ func ReceiptFileZipGetByID(
 		return
 	}
 	deposit := new(models.Deposit)
-	if err = DepositCollection.AggregateOne(ctx, models.DepositPipeline().Match(id.Filter()).Pipe, deposit); err != nil {
+	filter := (&models.DepositParam{ID: id.ID}).PermittedFilter(token)
+	if err = DepositCollection.AggregateOne(ctx, models.DepositPipeline().Match(filter).Pipe, deposit); err != nil {
 		return
 	}
 	buf := new(bytes.Buffer)
@@ -112,7 +121,9 @@ func ReceiptFileDeleteByID(
 	if err = ReceiptFileCollection.FindOne(ctx, id.Filter(), file); err != nil {
 		return
 	}
-	//permission check
+	if err = receiptDepositPermission(ctx, file.DepositID, token); err != nil {
+		return
+	}
 	if err = Database.DeleteFile(ctx, id.ID); err != nil {
 		return
 	}
