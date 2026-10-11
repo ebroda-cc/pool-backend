@@ -56,6 +56,8 @@ func UsersAddressUpdate(ctx context.Context, i *models.AddressUpdate, token *mod
 }
 
 func AddressUpdate(ctx context.Context, i *models.AddressUpdate, token *models.AccessToken) (result *models.Address, err error) {
+	// the address stays assigned to the token user
+	i.UserID = token.ID
 	filter := i.PermittedFilter(token)
 	if err = AddressesCollection.UpdateOne(ctx, filter, vmdb.UpdateSet(i), &result); err != nil {
 		return

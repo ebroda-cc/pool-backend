@@ -57,10 +57,16 @@ func UserCrewUpdate(ctx context.Context, i *models.UserCrewUpdate, token *models
 	if err = i.UserCrewUpdatePermission(token); err != nil {
 		return
 	}
+	if i.CrewID == "" {
+		return nil, vcago.NewBadRequest(models.CrewCollection, "crew_id required", nil)
+	}
 	crew := new(models.Crew)
 	if err = CrewsCollection.FindOne(ctx, i.CrewFilter(), crew); err != nil {
 		return
 	}
+	// name and email of the crew are taken from the crew, not from the request
+	i.Name = crew.Name
+	i.Email = crew.Email
 	i.OrganisationID = crew.OrganisationID
 	user := new(models.User)
 	if err = UserCollection.UpdateOne(ctx, i.PermittedFilter(token), vmdb.UpdateSet(i), &user); err != nil {
