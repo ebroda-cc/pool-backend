@@ -19,6 +19,9 @@ func TakingInsert(ctx context.Context, i *models.TakingCreate, token *models.Acc
 	if err = models.TakingPermission(token); err != nil {
 		return
 	}
+	if !token.Roles.Validate("admin;employee;pool_employee") && (token.CrewID == "" || i.CrewID != token.CrewID) {
+		return nil, vcago.NewPermissionDenied(models.TakingCollection)
+	}
 	taking := i.TakingDatabase()
 	if err = TakingCollection.InsertOne(ctx, taking); err != nil {
 		return
@@ -55,11 +58,17 @@ func TakingUpdate(ctx context.Context, i *models.TakingUpdate, token *models.Acc
 	if err = takingDatabase.UpdatePermission(token); err != nil {
 		return
 	}
+	if !token.Roles.Validate("admin;employee;pool_employee") {
+		i.CrewID = takingDatabase.CrewID
+		i.OrganisationID = takingDatabase.OrganisationID
+	}
 	//i.State = takingDatabase.State
 	for _, v := range i.Sources {
+		// sources can only be changed through the taking they belong to
+		v.TakingID = takingDatabase.ID
+		sourceFilter := bson.D{{Key: "_id", Value: v.ID}, {Key: "taking_id", Value: takingDatabase.ID}}
 		//create new sources
 		if v.ID == "" {
-			v.TakingID = i.ID
 			newSource := v.Source()
 			if err = SourceCollection.InsertOne(ctx, newSource); err != nil {
 				return
@@ -67,7 +76,7 @@ func TakingUpdate(ctx context.Context, i *models.TakingUpdate, token *models.Acc
 		}
 		if v.UpdateState == "deleted" {
 			if models.SourceDeletePermission(takingDatabase, token) {
-				if err = SourceCollection.DeleteOne(ctx, bson.D{{Key: "_id", Value: v.ID}}); err != nil {
+				if err = SourceCollection.DeleteOne(ctx, sourceFilter); err != nil {
 					return
 				}
 			}
@@ -76,14 +85,14 @@ func TakingUpdate(ctx context.Context, i *models.TakingUpdate, token *models.Acc
 			databaseSource := new(models.Source)
 			if err = SourceCollection.FindOne(
 				ctx,
-				bson.D{{Key: "_id", Value: v.ID}},
+				sourceFilter,
 				databaseSource,
 			); err != nil {
 				return
 			}
 			if err = SourceCollection.UpdateOne(
 				ctx,
-				bson.D{{Key: "_id", Value: v.ID}},
+				sourceFilter,
 				vmdb.UpdateSet(v),
 				nil,
 			); err != nil {
